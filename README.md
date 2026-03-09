@@ -13,7 +13,6 @@ The project evolves through **incremental iterations**, each adding new capabili
 AI coding agents normally restart every session with no persistent memory of the project.
 
 That means they must repeatedly learn:
-
 - project architecture
 - debugging patterns
 - coding conventions
@@ -21,7 +20,6 @@ That means they must repeatedly learn:
 - user preferences
 
 This leads to:
-
 - large prompts
 - wasted tokens
 - slower responses
@@ -43,10 +41,7 @@ The system is installed using a **root orchestrator prompt**:
 codex_context_engine.md
 ```
 
-This root prompt does not implement the engine itself.
-
-Instead, it:
-
+This root prompt does not implement the engine itself. Instead, it:
 1. detects which engine iteration is already installed in the repository
 2. discovers available iterations in this repo
 3. executes any missing iterations in order
@@ -90,11 +85,13 @@ codex_context_engine
       ├─ 7/
       │  ├─ readme.md
       │  └─ prompt.md
+      ├─ 8/
+      │  ├─ readme.md
+      │  └─ prompt.md
       └─ ...
 ```
 
 Each iteration introduces a new layer of capabilities.
-
 The **root orchestrator automatically applies all missing iterations**.
 
 ---
@@ -102,7 +99,6 @@ The **root orchestrator automatically applies all missing iterations**.
 # Installation
 
 To install or upgrade the engine in a repository:
-
 1. Open the root prompt:
 
 ```text
@@ -112,14 +108,12 @@ codex_context_engine.md
 2. Execute it inside the target repository using Codex.
 
 The prompt will:
-
 - detect existing installations
 - determine the current iteration
 - apply the missing iterations
 - upgrade the engine safely
 
 This works for both:
-
 - fresh installations
 - upgrading existing installations
 
@@ -127,16 +121,12 @@ This works for both:
 
 # Iteration Model
 
-The engine evolves through incremental iterations.
-
-Each iteration adds new functionality while preserving compatibility with previous ones.
+The engine evolves through incremental iterations. Each iteration adds new functionality while preserving compatibility with previous ones.
 
 ## Iteration 1 — External Memory Foundation
-
 Introduces the concept of **persistent context memory** stored inside the repository.
 
 Main ideas:
-
 - reusable project knowledge
 - persistent preferences
 - graceful fallback behavior
@@ -144,11 +134,9 @@ Main ideas:
 ---
 
 ## Iteration 2 — Structured Context System
-
 Adds structure and observability.
 
 New capabilities:
-
 - structured `.codex_memory`
 - telemetry for token/context savings
 - validation and system diagnostics
@@ -156,11 +144,9 @@ New capabilities:
 ---
 
 ## Iteration 3 — Smart Context Selection
-
 Improves how context is selected and maintained.
 
 Features:
-
 - deterministic context packets
 - relevance scoring for memory entries
 - memory compaction
@@ -168,11 +154,9 @@ Features:
 ---
 
 ## Iteration 4 — Global Metrics & Diagnostics
-
 Adds cross-project observability and system health monitoring.
 
 Features:
-
 - global telemetry aggregation
 - system health checks
 - cross-project savings reporting
@@ -180,11 +164,9 @@ Features:
 ---
 
 ## Iteration 5 — Context Cost Optimizer
-
 Adds a budget-aware optimization layer between packet assembly and model injection.
 
 Features:
-
 - estimated packet cost before injection
 - context budget thresholds
 - value-aware trimming and compression
@@ -193,28 +175,35 @@ Features:
 ---
 
 ## Iteration 6 — Context Planner
-
-Adds a proactive planning layer before context retrieval.
+Adds a planning layer that predicts what context should be retrieved before execution begins.
 
 Features:
-
 - task-aware context planning
-- repository-area prediction
-- memory category targeting
-- likely-file preselection before execution
+- repository area prediction
+- memory-category routing
+- pre-execution packet shaping
 
 ---
 
 ## Iteration 7 — Failure Memory
-
-Adds a structured memory layer for **previous failures, repeated friction points, and known resolutions**.
+Adds a repository-specific troubleshooting layer that records previous failures, root causes, and reusable fixes.
 
 Features:
+- failure pattern storage
+- root-cause summaries
+- reusable solution records
+- debugging-oriented retrieval
 
-- repository-specific troubleshooting knowledge
-- failure classification and structured records
-- reusable root-cause / solution patterns
-- selective retrieval of relevant failure history
+---
+
+## Iteration 8 — Task-Specific Memory
+Adds a specialized memory layer scoped by task type so the engine can retrieve context patterns that are more relevant for debugging, refactoring, testing, performance work, architecture work, and similar task classes.
+
+Features:
+- deterministic task-type inference
+- specialized task-memory categories
+- task-aware retrieval integration
+- reusable task-domain learning
 
 ---
 
@@ -223,27 +212,21 @@ Features:
 The engine follows several key principles.
 
 ### Minimal Context
-
 Only the information needed for the current task should enter the model context.
 
 ### Persistent Knowledge
-
 Useful project knowledge should survive across sessions.
 
 ### Incremental Evolution
-
 The system evolves through iterations rather than large rewrites.
 
 ### Safe Upgrades
-
 Upgrades should preserve:
-
 - memory
 - telemetry
 - project configuration
 
 ### Transparent Operation
-
 The system should be understandable and inspectable inside the repository.
 
 ---
@@ -261,7 +244,6 @@ The roadmap is ordered by **impact and operational need**.
 | 9 | Memory Graph |
 
 This order reflects a practical strategy:
-
 1. reduce context cost first
 2. improve planning next
 3. learn from repeated failures
@@ -278,4 +260,4 @@ Codex Context Engine explores a simple but powerful idea:
 
 By storing useful knowledge inside repositories and retrieving only relevant information, AI coding agents can become faster, cheaper, and more consistent across sessions.
 
-With Iteration 7, the engine now evolves beyond optimization and planning into **structured learning from failure patterns**.
+With Iteration 8, the engine now combines generic memory, planner logic, failure knowledge, and task-specific specialization into a more focused context orchestration workflow.
