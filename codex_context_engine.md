@@ -179,6 +179,13 @@ Example signals by capability:
 - relationship-aware context selection
 - bounded connected-context traversal
 
+### Iteration 10 signals
+- task logs or telemetry schemas that support `task_id`
+- task logs or telemetry schemas that support `level` such as `task` / `phase`
+- phase labels such as `phase_name`
+- weekly summaries exposing granular fields such as `phase_events_sampled`
+- analyzer behavior that aggregates phase-only rows into task-level savings summaries without double counting
+
 Infer the highest iteration that is **safely supported by the evidence**.
 If uncertain, prefer a lower installed iteration rather than overestimating.
 
@@ -338,6 +345,7 @@ At the end, return a concise final summary containing:
 5. whether any repair / normalization was performed
 6. the final installed iteration after successful completion
 7. any important caveat or partial-failure note
+8. whether granular telemetry / phase-level instrumentation is supported after the run
 
 ---
 
@@ -358,3 +366,6 @@ Adds specialized memory layers per workflow type so retrieval can adapt to testi
 
 ## Iteration 9 — Memory Graph
 Connects memory entities through explicit relationships so the engine can retrieve bounded neighborhoods of related knowledge instead of only flat records.
+
+## Iteration 10 — Granular Telemetry
+Extends savings telemetry from task-only estimates into backward-compatible task-plus-phase instrumentation so the engine can identify which subtasks, loops, or prompt phases consume the most context and tokens.

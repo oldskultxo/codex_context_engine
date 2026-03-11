@@ -47,6 +47,8 @@ Failure Memory
 Task-Specific Memory  
 ↓  
 Memory Graph
+↓
+Granular Telemetry
 
 Each layer improves how context is selected, used and remembered.
 
@@ -66,6 +68,7 @@ D --> F[Task-Specific Memory]
 
 E --> G[Memory Graph]
 F --> G
+G --> H[Granular Telemetry]
 ```
 
 ---
@@ -142,6 +145,21 @@ Goal: move from isolated memory records to connected contextual knowledge.
 
 ---
 
+# Granular Telemetry
+
+Extends telemetry from whole-task estimates into **task-plus-phase observability**.
+
+Responsibilities:
+
+- preserve backward-compatible task-level savings logs
+- support optional phase/subtask instrumentation
+- identify expensive task segments such as repo scan, test loops, or follow-up prompts
+- expose granular coverage and hot spots in summaries
+
+Goal: explain where context and token cost concentrate inside a task, not only across tasks.
+
+---
+
 # Example
 
 Without the engine:
@@ -161,6 +179,8 @@ Codex executes with focused context
 Failure memory records outcome  
 ↓  
 Memory graph connects new knowledge
+↓
+Granular telemetry explains where the cost concentrated
 
 ---
 
@@ -236,6 +256,7 @@ The engine currently implements:
 - persistent failure memory
 - task-specific contextual memory
 - graph-based contextual relationships
+- granular task-plus-phase telemetry
 
 Together these components create a layered contextual architecture that progressively improves Codex performance on complex repositories.
 
