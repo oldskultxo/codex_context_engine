@@ -186,6 +186,32 @@ Example signals by capability:
 - weekly summaries exposing granular fields such as `phase_events_sampled`
 - analyzer behavior that aggregates phase-only rows into task-level savings summaries without double counting
 
+### Iteration 11 signals
+- `.codex_library/`
+- `.codex_library/registry.json`
+- `.codex_library/mods/`
+- mod manifests such as `.codex_library/mods/<mod_id>/mod.json`
+- evidence of knowledge mods created through commands such as `learn <mod>` or `aprende <mod>`
+- engine artifacts referencing "knowledge mods" or local domain learning
+
+### Iteration 12 signals
+- processed knowledge artifacts under `.codex_library/mods/<mod_id>/`
+- directories such as:
+  - `notes/`
+  - `summaries/`
+  - `indices/`
+  - `manifests/`
+- evidence of document ingestion pipelines
+- normalized document sources or extracted text artifacts
+- topic indices or retrieval metadata generated from documents
+
+### Iteration 13 signals
+- retrieval artifacts referencing indices or retrieval maps
+- logic selecting artifacts from `notes/`, `summaries/`, or `indices/`
+- retrieval packs assembled from `.codex_library/`
+- code paths that load compact knowledge artifacts instead of raw documents
+- evidence of topic-aware knowledge retrieval
+
 Infer the highest iteration that is **safely supported by the evidence**.
 If uncertain, prefer a lower installed iteration rather than overestimating.
 
@@ -346,7 +372,8 @@ At the end, return a concise final summary containing:
 6. the final installed iteration after successful completion
 7. any important caveat or partial-failure note
 8. whether granular telemetry / phase-level instrumentation is supported after the run
-
+9. whether mods, library and mcp instrumentation is supported after the run
+10. the status of the tool
 ---
 
 # EVOLUTION ROADMAP
@@ -369,3 +396,18 @@ Connects memory entities through explicit relationships so the engine can retrie
 
 ## Iteration 10 — Granular Telemetry
 Extends savings telemetry from task-only estimates into backward-compatible task-plus-phase instrumentation so the engine can identify which subtasks, loops, or prompt phases consume the most context and tokens.
+
+## Iteration 11 — Knowledge Mods
+Introduces a generic mod system and a local knowledge workspace (`.codex_library/`) that allows Codex to learn domain knowledge across executions.
+
+Knowledge areas can be created dynamically (for example `learn ux` or `learn accessibility`) and persist structured knowledge about those domains.
+
+## Iteration 12 — Knowledge Processing Pipeline
+Adds a document ingestion pipeline that converts raw documents into compact reusable artifacts such as notes, summaries, and indices.
+
+This allows the engine to reuse structured knowledge without repeatedly loading full source documents.
+
+## Iteration 13 — Knowledge Retrieval Engine
+Adds a retrieval layer that selects the most relevant artifacts from the local knowledge library for a given request.
+
+Instead of loading large documents, the engine uses indices and retrieval maps to assemble minimal high-value context packs.
