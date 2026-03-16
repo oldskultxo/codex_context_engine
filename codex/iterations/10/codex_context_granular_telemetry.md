@@ -62,6 +62,7 @@ Iteration 10 adds that missing layer.
    - existing `task_logs.jsonl` rows that only describe full tasks must remain valid
    - existing weekly summaries must still be producible
    - old repositories must not need an immediate migration to keep working
+   - legacy rows without `level` must still be interpreted as task-level telemetry when they carry whole-task fields such as `estimated_full_context_tokens` and `task_packet_tokens`
 
 3. **Do not double count task totals**
    - if a task has both a top-level task row and multiple phase rows, the engine must not sum both into the top-level summary
@@ -80,6 +81,11 @@ Iteration 10 adds that missing layer.
 
 7. **Do not add instructions about creating iteration folder packaging for this repository**
    - focus on the implementation expected in the target repository
+
+8. **Respect cross-project shared telemetry mode**
+   - if the engine runs in cross-project mode, telemetry may live in a shared engine repository instead of only inside each consumer repository
+   - per-project savings must remain attributable even when telemetry storage is shared
+   - global aggregation must prefer the authoritative shared project telemetry over stale repo-local telemetry snapshots when the runtime state says cross-project mode is active
 
 ---
 
@@ -106,6 +112,20 @@ Global savings / optimization reporting
 ```
 
 The engine should preserve the old task-level summary as the compatibility baseline and add a new phase-aware lens on top.
+
+In cross-project mode, the conceptual flow is:
+
+```text
+Task execution in repo X
+  ↓
+Shared engine telemetry root
+  ↓
+Project-scoped shared telemetry mirror for repo X
+  ↓
+Per-project weekly summary for repo X
+  ↓
+Global aggregation over shared project telemetry
+```
 
 ---
 
@@ -145,6 +165,7 @@ Add analyzer logic that normalizes raw telemetry rows into a consistent internal
 
 Normalization should:
 - infer `level = task` when no granular signal exists
+- infer `level = task` for legacy rows that omit `level` but include whole-task savings fields
 - derive a stable task grouping key when possible
 - attach fallback defaults for missing token and reasoning estimates
 - keep malformed rows non-fatal when safe
@@ -185,6 +206,8 @@ Keep the original summary fields intact.
 
 Improve the analyzer so it can run against:
 - the default repo-local telemetry location
+- a shared engine telemetry root in cross-project mode
+- a project-scoped shared telemetry directory such as `.context_metrics/projects/<repo>/`
 - an alternate telemetry directory for tests or migration checks
 - an alternate ledger path when validating in temporary directories
 - a configurable reporting period if practical
@@ -195,8 +218,10 @@ Prefer lightweight CLI flags over introducing dependencies.
 
 Update telemetry documentation so future users know:
 - the old task-level format is still valid
+- legacy rows without `level` are still valid task rows if they include whole-task token fields
 - phase-level rows are now supported
 - how aggregation behaves when task and phase rows coexist
+- how cross-project shared telemetry is laid out and which path is authoritative
 - what fields are recommended for granular logging
 
 The documentation should remain concise and operational.
@@ -219,6 +244,8 @@ Conceptually validate at least these scenarios:
 3. telemetry with phase-only rows still produces coherent task-level savings estimates
 4. phase-level fields appear in the generated summary
 5. the analyzer remains resilient to missing optional fields
+6. shared cross-project telemetry still produces a correct per-project summary
+7. global aggregation prefers shared authoritative telemetry over stale repo-local copies when cross-project mode is active
 
 ---
 
@@ -226,6 +253,7 @@ Conceptually validate at least these scenarios:
 
 ### Compatibility first
 Historical telemetry must remain readable and useful.
+This includes imported legacy rows and cross-project shared telemetry layouts.
 
 ### Granularity without complexity explosion
 The goal is not full tracing of every token event.
@@ -236,6 +264,9 @@ A human should be able to read a few JSONL rows and predict how the summary will
 
 ### Actionable metrics
 The resulting summaries should help answer where optimization effort belongs, not just report one global percentage.
+
+### Shared storage without attribution loss
+Cross-project shared telemetry must reduce duplication without collapsing repository attribution.
 
 ---
 

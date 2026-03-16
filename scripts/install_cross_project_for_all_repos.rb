@@ -9,7 +9,12 @@ require "time"
 SCRIPT_DIR = File.expand_path(__dir__).freeze
 DEFAULT_ENGINE_REPO = File.expand_path("..", SCRIPT_DIR).freeze
 HOME_DIR = Dir.home.freeze
-PROJECTS_DIR = File.expand_path(ENV.fetch("CODEX_PROJECTS_DIR", File.join(HOME_DIR, "projects"))).freeze
+DEFAULT_PROJECTS_DIR = if Dir.exist?(File.join(HOME_DIR, "Documents", "projects"))
+  File.join(HOME_DIR, "Documents", "projects")
+else
+  File.join(HOME_DIR, "projects")
+end.freeze
+PROJECTS_DIR = File.expand_path(ENV.fetch("CODEX_PROJECTS_DIR", DEFAULT_PROJECTS_DIR)).freeze
 ENGINE_REPO = File.expand_path(ENV.fetch("CODEX_ENGINE_REPO", DEFAULT_ENGINE_REPO)).freeze
 ENGINE_STATE = File.join(ENGINE_REPO, ".codex_context_engine", "state.json").freeze
 PROJECTS_INDEX = File.join(ENGINE_REPO, ".codex_global_metrics", "projects_index.json").freeze
@@ -95,6 +100,32 @@ def write_json(path, payload)
   File.write(path, JSON.pretty_generate(payload) + "\n")
 end
 
+def ensure_gitignore(repo_path)
+  gitignore_path = File.join(repo_path, ".gitignore")
+  desired = [
+    ".codex_context_engine/",
+    ".codex_memory/",
+    ".context_metrics/",
+    ".codex_global_metrics/",
+    ".codex_cost/",
+    ".codex_planner/",
+    ".codex_task_memory/",
+    ".codex_failure_memory/",
+    ".codex_memory_graph/",
+    ".codex_library/",
+    "CONTEXT_SAVINGS.md"
+  ]
+  existing = File.exist?(gitignore_path) ? File.read(gitignore_path).lines.map(&:chomp) : []
+  changed = false
+  desired.each do |entry|
+    next if existing.include?(entry)
+    existing << entry
+    changed = true
+  end
+  File.write(gitignore_path, existing.join("\n") + "\n") if changed
+  changed
+end
+
 def strip_legacy_codex_context_sections(content)
   cleaned = content.dup
   cleaned.gsub!(/^## External Memory Required.*?(?=^## |\z)/m, "")
@@ -141,6 +172,7 @@ def install_repo(repo_path, installed_iteration)
       created_agents: false,
       updated_agents: false,
       updated_state: false,
+      updated_gitignore: false,
       skipped_engine_repo: true
     }
   end
@@ -149,6 +181,7 @@ def install_repo(repo_path, installed_iteration)
   agents_result = upsert_agents(repo_path)
   payload = state_payload(repo_path, installed_iteration)
   updated_state = false
+  updated_gitignore = ensure_gitignore(repo_path)
 
   if !File.exist?(state_path) || File.read(state_path) != JSON.pretty_generate(payload) + "\n"
     write_json(state_path, payload)
@@ -159,7 +192,8 @@ def install_repo(repo_path, installed_iteration)
     repo_path: repo_path,
     created_agents: agents_result == :created,
     updated_agents: agents_result == :updated,
-    updated_state: updated_state
+    updated_state: updated_state,
+    updated_gitignore: updated_gitignore
   }
 end
 
@@ -204,6 +238,7 @@ puts JSON.pretty_generate(
     created_agents: results.count { |result| result[:created_agents] },
     updated_agents: results.count { |result| result[:updated_agents] },
     updated_state_files: results.count { |result| result[:updated_state] },
+    updated_gitignores: results.count { |result| result[:updated_gitignore] },
     projects_dir: PROJECTS_DIR,
     engine_repo: ENGINE_REPO
   }

@@ -3,7 +3,11 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 ENGINE_REPO="${CODEX_ENGINE_REPO:-$(cd "$SCRIPT_DIR/.." && pwd)}"
-PROJECTS_DIR="${CODEX_PROJECTS_DIR:-$HOME/projects}"
+DEFAULT_PROJECTS_DIR="$HOME/projects"
+if [ -d "$HOME/Documents/projects" ]; then
+  DEFAULT_PROJECTS_DIR="$HOME/Documents/projects"
+fi
+PROJECTS_DIR="${CODEX_PROJECTS_DIR:-$DEFAULT_PROJECTS_DIR}"
 RUBY_BIN="${RUBY_BIN:-$(command -v ruby)}"
 LABEL="${CODEX_LAUNCH_AGENT_LABEL:-com.santi.codex-context-engine.projects}"
 PLIST_PATH="$HOME/Library/LaunchAgents/$LABEL.plist"

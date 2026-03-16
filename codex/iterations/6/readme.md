@@ -1,131 +1,102 @@
-# Iteration 6 — Task-Specific Memory
-
-Iteration 6 adds a **task-specific memory layer** to `codex_context_engine`.
-
-Until Iteration 5, the engine already knew how to persist general repository knowledge, score relevance, compact context, and expose global diagnostics. Iteration 6 pushes the model further: memory is no longer only global, but also **specialized by workflow type**.
+# Iteration 6 — Context Planner
 
 ## Goal
 
-Different engineering tasks need different kinds of reusable knowledge.
+Add a **planning layer** to `codex_context_engine` so the engine decides **which context to load before retrieval and packet assembly**.
 
-A bug-fixing session benefits from recurring error patterns, fragile modules, and common failure locations.
-A refactor benefits from structure constraints, rename patterns, and module boundaries.
-A testing task benefits from known test entry points, flaky areas, and coverage conventions.
+Until Iteration 5, the engine could persist memory, score relevance, compact packets, expose metrics, and optimize cost. What it still lacked was a first-class step that decides:
 
-Iteration 6 introduces a layer that allows the engine to retrieve and persist that kind of knowledge in a task-aware way.
+- what kind of task is happening
+- which context layers should be consulted
+- how deep retrieval should go
+- when exploration should stay narrow
 
-## Core idea
+Iteration 6 adds that planning layer.
 
-The engine now resolves an active `task_type` and uses it to enrich context retrieval before execution.
+## Why this iteration exists
 
-Conceptually:
+Good memory and good optimization are not enough if the engine starts from the wrong retrieval strategy.
+
+Before this iteration, the engine could still waste work by:
+
+- exploring too broadly for a small task
+- loading the wrong mix of memory layers
+- treating a local fix and an architecture task too similarly
+- retrieving context before deciding what the task actually needs
+
+Iteration 6 addresses that by making planning explicit.
+
+## Core concept
 
 ```text
 User Task
   ↓
-Task Type Resolution
+Context Planner
   ↓
-Task-Specific Memory Retrieval
-  +
-General Memory Retrieval
+Context Retrieval
   ↓
 Deterministic Context Packet
+  ↓
+Context Cost Optimizer
   ↓
 Codex Execution
 ```
 
-## Baseline task types
-
-The stable baseline for this iteration is:
-
-- `bug_fixing`
-- `refactoring`
-- `tests`
-- `performance`
-- `architecture`
-- `general`
-
-`general` is the mandatory fallback bucket.
-
-## Expected storage model
-
-Task-specific memory is stored separately from the main general memory layer, using a structure equivalent to:
-
-```text
-.codex_task_memory/
-  bug_fixing/
-  refactoring/
-  tests/
-  performance/
-  architecture/
-  general/
-```
-
-This layer complements `.codex_memory/`. It does not replace it.
+The planner does not replace retrieval.
+It routes retrieval.
 
 ## What this iteration adds
 
-- task type resolution
-- task-aware context retrieval
-- task-aware persistence of reusable learnings
-- safe fallback to `general`
-- compatibility with existing deterministic packet assembly
-- observability around task-memory usage
+- task-shape detection before retrieval
+- planning signals for execution scope
+- selection of relevant context layers
+- bounded retrieval depth
+- safer fallback behavior when confidence is weak
+- planner observability compatible with prior telemetry
 
-## Examples of reusable task memory
+## Typical planning decisions
 
-### bug_fixing
-- recurring failure patterns
-- fragile modules
-- common root causes
-- typical fix locations
+The planner should help answer questions like:
 
-### refactoring
-- naming conventions
-- module boundaries
-- known coupling problems
-- safe migration constraints
-
-### tests
-- test entry points
-- flaky areas
-- common setup patterns
-- existing test conventions
-
-### performance
-- hotspots
-- expensive flows
-- query bottlenecks
-- token-heavy or slow analysis areas
-
-### architecture
-- subsystem boundaries
-- important design decisions
-- known layering rules
-- cross-cutting constraints
+- Is this a bug fix, test task, refactor, performance pass, or architecture task?
+- Should the engine prioritize failure memory?
+- Should retrieval stay local to a file/module, or expand wider?
+- Should task-specific memory be queried?
+- Should graph expansion remain shallow?
+- Should the packet aim for a narrow or broad budget profile?
 
 ## Design constraints
 
 Iteration 6 must preserve the **autoincremental engine model**.
-It should be additive, backward-compatible, and safe for in-place upgrades.
+It should remain:
+
+- additive
+- backward-compatible
+- deterministic where practical
+- safe for in-place upgrades
+- compatible with Iterations 1–5
 
 That means:
 
-- no destructive reset of prior memory
-- no breaking changes to earlier retrieval flow
+- no destructive resets
 - no bypass of deterministic packet generation
+- no replacement of existing memory layers
 - no dependence on a fresh install
 
 ## Benefits
 
-- more relevant context retrieval
-- better specialization by task category
-- less noise in large repositories
-- stronger reuse of repository-specific working knowledge
-- safer repeated debugging, refactoring, and testing workflows
+- better context routing before retrieval starts
+- less unnecessary repo exploration
+- stronger distinction between narrow and broad tasks
+- cleaner use of failure memory, task memory, and graph expansion in later iterations
+- more predictable packet quality
 
-## Notes
+## Creates any new problems?
 
-This iteration is intentionally conservative.
-It introduces specialized memory while still preserving the general memory path as the universal fallback.
-That keeps the engine resilient even when classification is uncertain or task-specific memory is still sparse.
+Yes, a few.
+
+- It adds another decision layer that can be wrong.
+- A weak planner can route retrieval badly and reduce quality downstream.
+- It increases system complexity because planning rules must stay inspectable and stable.
+
+Even so, the tradeoff is worth it: planning mistakes are easier to debug than uncontrolled retrieval.

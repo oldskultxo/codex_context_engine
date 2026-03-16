@@ -11,6 +11,21 @@ The result is a system that becomes **more efficient, more aware of project stru
 
 ---
 
+# Canonical Runtime
+
+`codex_context_engine` is the canonical runtime.
+
+Operational entrypoints now live in this repository:
+
+- `python3 scripts/boot.py --repo <path>`
+- `python3 scripts/packet.py --task "..."`
+- `python3 scripts/query.py <term>`
+- `python3 scripts/global_metrics.py --refresh`
+
+In cross-project mode, task packets now write telemetry both to the shared root `.context_metrics/` layer and to `.context_metrics/projects/<repo>/`, so savings reports can be attributed per repository.
+
+---
+
 # Core Idea
 
 Large coding tasks often fail not because of model capability, but because of **context loss**.
@@ -425,9 +440,14 @@ Together these components create a layered contextual architecture that progress
 
 ---
 
-# Auto-Initialize Across `~/projects`
+# Auto-Initialize Across Your Projects Directory
 
-If you want every Git repository under `~/projects` to be integrated automatically, use the cross-project installer plus the macOS `launchd` agent in `scripts/`.
+If you want every Git repository under your projects directory to be integrated automatically, use the cross-project installer plus the macOS `launchd` agent in `scripts/`.
+
+Default scan path:
+
+- `~/Documents/projects` when that directory exists
+- otherwise `~/projects`
 
 Requirement:
 
@@ -447,15 +467,15 @@ Automatic background integration on macOS:
 
 What this does:
 
-- scans `~/projects` for Git repositories
+- scans the default projects directory for Git repositories
 - creates or updates `.codex_context_engine/state.json` in each repository
 - creates `AGENTS.md` when missing
 - appends or refreshes a managed `codex_context_engine` block inside an existing `AGENTS.md`
-- re-runs automatically at login, every 5 minutes, and whenever `~/projects` changes
+- re-runs automatically at login, every 5 minutes, and whenever the configured projects directory changes
 
 Useful environment variables:
 
-- `CODEX_PROJECTS_DIR` to target a directory other than `~/projects`
+- `CODEX_PROJECTS_DIR` to target a directory other than the default detected projects directory
 - `CODEX_ENGINE_REPO` to point to a shared engine repository in a different path
 - `CODEX_LAUNCH_AGENT_LABEL` to override the default `launchd` label
 
