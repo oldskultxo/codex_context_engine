@@ -97,6 +97,7 @@ Possible evidence may include:
 - `.codex_failure_memory/`
 - `.codex_task_memory/`
 - `.codex_memory_graph/`
+- `.codex_library/`
 - `CONTEXT_SAVINGS.md`
 - files or comments explicitly mentioning `codex_context`
 - iteration metadata files if present
@@ -217,7 +218,18 @@ Example signals by capability:
 - any `inbox/references.md` file inside a mod directory
 - `manifests/state.json` of any mod contains a `referenced_files` key
 - processing logic that parses `references.md` and tracks `mtime` alongside hash in state
-- support for `.sql`, `.xml`, `.json`, `.yaml`, `.py`, `.csv` as ingestible formats via references
+- support for `.sql`, `.xml`, `.json`, `.yaml`, `.yml`, `.py`, `.csv` as ingestible formats via references
+- evidence that a mod can learn from file references without copying the source files into `inbox/`
+
+### Iteration 15 signals
+- any mod contains `remote_sources/manifest.json`
+- any mod contains `remote_sources/raw/`
+- any mod contains `remote_sources/snapshots/`
+- any mod contains `remote_sources/extracted/`
+- CLI or scripts reference commands equivalent to `mod add-source` or `mod fetch-sources`
+- snapshot metadata records include URL, canonical URL, fetch timestamp, raw artifact path, extracted artifact path, and inbox path
+- canonical inbox documents produced from remote URLs preserve source traceability
+- remote documentation sources are materialized locally before learning or retrieval
 
 Infer the highest iteration that is **safely supported by the evidence**.
 If uncertain, prefer a lower installed iteration rather than overestimating.
@@ -280,6 +292,7 @@ When upgrading an existing installation:
 - preserve telemetry unless it is clearly broken or incompatible
 - preserve preferences unless normalization is required
 - preserve existing `AGENTS.md` rules unless they conflict with engine behavior
+- preserve `.codex_library/` artifacts, references, snapshots, and manifests unless migration is required
 - prefer in-place upgrades
 - avoid replacing the whole system if only one layer is missing
 
@@ -379,8 +392,9 @@ At the end, return a concise final summary containing:
 6. the final installed iteration after successful completion
 7. any important caveat or partial-failure note
 8. whether granular telemetry / phase-level instrumentation is supported after the run
-9. whether mods, library and mcp instrumentation is supported after the run
+9. whether mods, library, references ingestion, remote ingestion, and MCP instrumentation are supported after the run
 10. the status of the tool
+
 ---
 
 # EVOLUTION ROADMAP
@@ -418,3 +432,18 @@ This allows the engine to reuse structured knowledge without repeatedly loading 
 Adds a retrieval layer that selects the most relevant artifacts from the local knowledge library for a given request.
 
 Instead of loading large documents, the engine uses indices and retrieval maps to assemble minimal high-value context packs.
+
+## Iteration 14 — Reference-Based Ingestion
+Adds support for learning from referenced local files without copying them manually into a mod inbox.
+
+The engine can process a mod-level `inbox/references.md`, resolve supported referenced files, track them in mod state with hash and `mtime`, and route their extracted content through the existing knowledge processing pipeline.
+
+This extends ingestion beyond manually dropped documents and is especially useful for structured project assets such as `.sql`, `.xml`, `.json`, `.yaml`, `.yml`, `.py`, and `.csv`.
+
+## Iteration 15 — Remote Knowledge Ingestion
+Adds a remote acquisition layer that lets mods register documentation URLs, fetch them, materialize local snapshots, extract normalized text, and emit canonical local documents for the existing knowledge pipeline.
+
+This iteration does **not** make retrieval depend on live web access.
+It follows the principle:
+
+**remote acquisition, local reasoning**

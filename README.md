@@ -1,4 +1,3 @@
-
 # codex_context_engine
 
 An external memory and context orchestration engine for Codex.
@@ -69,7 +68,11 @@ Knowledge Mods
 ↓  
 Knowledge Processing Pipeline  
 ↓  
-Knowledge Retrieval Engine
+Knowledge Retrieval Engine  
+↓  
+Reference-Based Ingestion  
+↓  
+Remote Knowledge Ingestion
 
 Each layer improves how context is selected, used and remembered.
 
@@ -94,6 +97,8 @@ G --> H[Granular Telemetry]
 H --> I[Knowledge Mods]
 I --> J[Knowledge Processing Pipeline]
 J --> K[Knowledge Retrieval Engine]
+K --> L[Reference-Based Ingestion]
+L --> M[Remote Knowledge Ingestion]
 ```
 
 ---
@@ -193,7 +198,7 @@ The engine can now create **domain-specific knowledge areas on demand**, allowin
 
 Example commands:
 
-```
+```text
 learn ux
 aprende ux
 study accessibility
@@ -202,7 +207,7 @@ learn architecture
 
 When a mod is requested for the first time, the engine automatically creates a local workspace:
 
-```
+```text
 .codex_library/mods/<mod_id>/
 ```
 
@@ -216,7 +221,7 @@ Iteration 12 adds a **document processing pipeline** that converts raw documents
 
 Documents placed in a mod inbox are processed into compact artifacts such as:
 
-```
+```text
 notes/
 summaries/
 indices/
@@ -225,7 +230,7 @@ manifests/
 
 Typical pipeline stages:
 
-```
+```text
 detect documents
 → extract text
 → normalize
@@ -247,14 +252,14 @@ Iteration 13 introduces a **retrieval layer** that selects the most relevant art
 
 Instead of re-reading entire documents, the engine:
 
-1. detects relevant knowledge mods  
-2. identifies likely topics  
-3. consults lightweight indices  
+1. detects relevant knowledge mods
+2. identifies likely topics
+3. consults lightweight indices
 4. loads a minimal set of notes or summaries
 
 Example retrieval flow:
 
-```
+```text
 request
 → detect mod
 → detect topic
@@ -264,6 +269,96 @@ request
 ```
 
 This ensures that Codex receives **high-value contextual knowledge with minimal token cost**.
+
+---
+
+# Reference-Based Ingestion (Iteration 14)
+
+Iteration 14 adds support for **learning from referenced local files** instead of requiring every source file to be copied manually into a mod inbox.
+
+A mod can define:
+
+```text
+.codex_library/mods/<mod_id>/inbox/references.md
+```
+
+The engine uses that file as a reference manifest, resolves supported local paths, and processes the referenced files through the existing knowledge pipeline.
+
+This iteration is designed for cases where the source material already exists in the repository or elsewhere on disk and should remain in place.
+
+## Iteration 14 capabilities
+
+- parse `inbox/references.md` inside a mod
+- resolve referenced local files safely
+- track referenced files in mod state
+- store both content hash and `mtime` for change detection
+- reprocess only when a referenced file changes
+- support structured and code-adjacent file types through references
+
+## Supported reference-oriented formats
+
+- `.sql`
+- `.xml`
+- `.json`
+- `.yaml`
+- `.yml`
+- `.py`
+- `.csv`
+
+## Iteration 14 state expectations
+
+Evidence of Iteration 14 typically includes:
+
+- `.codex_library/REFERENCES_TEMPLATE.md`
+- one or more `inbox/references.md` files
+- `manifests/state.json` containing `referenced_files`
+- processing logic that uses both hash and `mtime`
+
+---
+
+# Remote Knowledge Ingestion (Iteration 15)
+
+Iteration 15 adds a **remote acquisition layer** to the engine.
+
+The goal is not to make the engine depend on live web access during retrieval.
+Instead, the engine can now ingest documentation from URLs, convert the fetched content into local reproducible artifacts, and then feed those artifacts into the existing local knowledge pipeline.
+
+This follows the principle:
+
+> **remote acquisition, local reasoning**
+
+## Iteration 15 capabilities
+
+- register URL-based sources under a mod
+- fetch registered remote sources
+- store raw payloads locally
+- create snapshot metadata records per fetch
+- extract normalized text from supported remote formats
+- emit canonical inbox documents for the existing learning flow
+- preserve traceability from local artifact back to source URL
+
+## Example commands
+
+```bash
+codex-context mod add-source android_core --url https://developer.android.com/guide --tag android --tag official-docs
+codex-context mod fetch-sources android_core
+codex-context mod learn android_core
+```
+
+## Supported remote formats
+
+- HTML
+- PDF
+- Markdown
+- TXT
+
+## Remote ingestion design rules
+
+- remote sources are used only during ingestion
+- retrieval remains local-first
+- snapshots should be reproducible
+- raw, extracted, and inbox artifacts should remain traceable
+- this iteration is not an open-ended crawler
 
 ---
 
@@ -291,7 +386,11 @@ Telemetry explains cost distribution
 ↓  
 Knowledge mods store domain knowledge  
 ↓  
-Retrieval engine loads only relevant artifacts
+Retrieval engine loads only relevant artifacts  
+↓  
+Reference-based ingestion expands local learning sources  
+↓  
+Remote ingestion converts URLs into local knowledge
 
 ---
 
@@ -341,44 +440,86 @@ This allows Codex to reuse learned knowledge across tasks and projects.
 
 ---
 
+## Local-first retrieval
+
+Even when knowledge comes from references or URLs, retrieval still operates on local artifacts.
+
+This preserves determinism, reduces dependency on live systems, and keeps context assembly reproducible.
+
+---
+
 # Local Knowledge Library
 
 The knowledge system uses a local workspace:
 
-```
+```text
 .codex_library/
 ```
 
 Typical structure:
 
-```
+```text
 .codex_library/
-  registry.json
+  registry.json                      # global mod registry
+  REFERENCES_TEMPLATE.md             # template for reference-based ingestion
   mods/
     <mod_id>/
-      inbox/
-      sources/
-      processed/
-      notes/
-      summaries/
-      indices/
-      manifests/
-      mod.json
+      mod.json                       # mod metadata and configuration
+      inbox/                         # canonical local documents waiting to be processed
+      inbox/references.md            # optional reference manifest for Iteration 14
+      sources/                       # local source staging area used by prior learning flows
+      processed/                     # processed intermediate artifacts
+      notes/                         # compact note artifacts for retrieval
+      summaries/                     # higher-level summaries for retrieval
+      indices/                       # topic/index lookup artifacts
+      manifests/                     # mod state, manifests, and processing metadata
+      remote_sources/                # Iteration 15 remote acquisition workspace
+      remote_sources/manifest.json   # registered remote URL sources
+      remote_sources/raw/            # raw fetched payloads
+      remote_sources/snapshots/      # per-fetch metadata manifests
+      remote_sources/extracted/      # normalized extracted text from remote sources
 ```
 
-Users can add documents to a mod by placing files in:
+## Folder and file purposes
 
-```
-.codex_library/mods/<mod_id>/inbox/
+- `registry.json` — tracks available mods in the local knowledge library
+- `REFERENCES_TEMPLATE.md` — provides the standard template for `references.md`
+- `mod.json` — stores per-mod metadata, identity, and settings
+- `inbox/` — receives canonical local documents to be processed by the learning pipeline
+- `inbox/references.md` — lists referenced local files that should be learned without copying them manually
+- `sources/` — keeps source-stage material used by existing local ingestion flows
+- `processed/` — stores intermediate processing outputs
+- `notes/` — stores compact reusable notes selected by retrieval
+- `summaries/` — stores condensed thematic summaries
+- `indices/` — stores lightweight lookup structures for topic-aware retrieval
+- `manifests/` — stores state, manifests, hashes, timestamps, and processing metadata
+- `remote_sources/manifest.json` — registers remote documentation sources for the mod
+- `remote_sources/raw/` — stores original fetched remote payloads
+- `remote_sources/snapshots/` — stores fetch-time metadata for reproducibility and traceability
+- `remote_sources/extracted/` — stores normalized text extracted from remote sources before inbox materialization
+
+## Reference-based ingestion examples
+
+Referenced files do not need to be copied into `inbox/` manually.
+Instead, the mod can declare them in:
+
+```text
+.codex_library/mods/<mod_id>/inbox/references.md
 ```
 
-Example:
+This is especially useful for project-native assets such as SQL, JSON, YAML, Python, XML, or CSV files that already exist in place.
 
-```
-.codex_library/mods/ux/inbox/about_face.pdf
-```
+## Remote ingestion examples
 
-Running the learning command again triggers processing.
+Remote documentation can now be learned through registered URLs, materialized locally, and then processed like any other canonical inbox document.
+
+Example flow:
+
+```bash
+codex-context mod add-source android_core --url https://developer.android.com/guide --tag android --tag official-docs
+codex-context mod fetch-sources android_core
+codex-context mod learn android_core
+```
 
 ---
 
@@ -388,7 +529,7 @@ The knowledge system is designed to integrate with MCP servers when available:
 
 - **filesystem MCP** — local document access
 - **git MCP** — repository awareness
-- **fetch MCP** — optional external enrichment
+- **fetch MCP** — optional external enrichment or acquisition support
 - **playwright MCP** — UI inspection for UX-related knowledge
 
 All MCP integrations remain **optional**.
@@ -435,6 +576,8 @@ The engine currently implements:
 - generic domain knowledge modules
 - document ingestion and processing
 - knowledge retrieval with minimal context loading
+- reference-based local file ingestion
+- remote documentation ingestion with local snapshot materialization
 
 Together these components create a layered contextual architecture that progressively improves Codex performance on complex repositories.
 

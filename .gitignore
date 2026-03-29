@@ -48,3 +48,6 @@ scripts/update_memory.py
 store/
 symptoms.json
 user_preferences.json
+migration/legacy_memory_migration_report.md
+migration/legacy_memory_import_map.json
+__pycache__/_memory_core.cpython-314.pyc
